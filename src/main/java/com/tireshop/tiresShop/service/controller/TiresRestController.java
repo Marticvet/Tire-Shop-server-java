@@ -40,8 +40,3 @@ public class TiresRestController {
         return service.getManufacturerModelByTireId(manufacturerName, tireId);
     }
 }
-
-// app.use("/tires/manufacturers", tiresController);
-// app.use("/sizes", sizesController);
-// app.use("/searchBy", searchController);
-// app.use('/users', usersController);
