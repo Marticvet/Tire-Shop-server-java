@@ -22,7 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/users")
 public class AuthController {
 
     private AuthenticationManager authenticationManager;
@@ -40,29 +40,33 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
-        if (userRepository.existsByUsername(registerDto.getUsername())) {
-            return new ResponseEntity<>("Username is taken!", HttpStatus.BAD_REQUEST);
+    public ResponseEntity<String> registerUser(@RequestBody RegisterDto registerDto) {
+
+        if (userRepository.existsByUsername(registerDto.getUsername()) == false) {
+            return new ResponseEntity<>("Email is already taken!", HttpStatus.BAD_REQUEST);
         }
 
         UserEntity user = new UserEntity();
+
         user.setUsername(registerDto.getUsername());
+        user.setfirstName(registerDto.getFirstName());
+        user.setLastName(registerDto.getLastName());
         user.setPassword(passwordEncoder.encode((registerDto.getPassword())));
 
-        userRepository.save(user);
-
-        return new ResponseEntity<>("User registered success!", HttpStatus.OK);
+        return userRepository.registerUser(user);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginDto LoginDto) {
+    public ResponseEntity<AuthResponseDTO> loginUser(@RequestBody LoginDto loginDto) {
+        System.out.println("heeere");
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        LoginDto.getUsername(),
-                        LoginDto.getPassword()));
+                        loginDto.getUsername(),
+                        loginDto.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+
         String token = jwtGenerator.generateToken(authentication);
         return new ResponseEntity<>(new AuthResponseDTO(token), HttpStatus.OK);
     }
