@@ -3,26 +3,18 @@ package com.tireshop.tiresShop.service.repo;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import com.tireshop.tiresShop.service.dto.LoginDto;
-import com.tireshop.tiresShop.service.dto.RegisterDto;
 import com.tireshop.tiresShop.service.model.UserEntity;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class UserRepository {
-    // Optional<UserEntity> findByUsername(String username);
-
-    // Boolean existsByUsername(String username);
 
     private JdbcTemplate jdbc;
 
@@ -88,22 +80,28 @@ public class UserRepository {
         }
     }
 
-    public Optional<UserEntity> findByEmail(String username) {
+    public Optional<UserEntity> findByEmail(String email) {
         String sql = "SELECT * FROM user WHERE email = ?";
 
         try {
             RowMapper<UserEntity> mapper = (rs, rowNum) -> {
                 UserEntity user = new UserEntity();
-
+                user.setUserId(rs.getLong("user_id"));
                 user.setUsername(rs.getString("email"));
                 user.setPassword(rs.getString("password"));
+                user.setfirstName(rs.getString("first_name"));
+                user.setLastName(rs.getString("last_name"));
                 return user;
             };
 
-            UserEntity user = jdbc.queryForObject(sql, mapper, username);
-            return Optional.ofNullable(user);
-
+            List<UserEntity> users = jdbc.query(sql, mapper, email);
+            if (users.isEmpty()) {
+                return Optional.empty();
+            } else {
+                return Optional.of(users.get(0));
+            }
         } catch (Exception e) {
+            e.printStackTrace();
             return Optional.empty();
         }
     }

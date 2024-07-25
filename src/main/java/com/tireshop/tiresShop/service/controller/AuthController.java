@@ -12,14 +12,17 @@ import com.tireshop.tiresShop.service.model.UserEntity;
 import com.tireshop.tiresShop.service.repo.UserRepository;
 import com.tireshop.tiresShop.service.security.JWTGenerator;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 
 @RestController
 @RequestMapping("/users")
@@ -57,17 +60,42 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> loginUser(@RequestBody LoginDto loginDto) {
-        System.out.println("heeere");
+    public ResponseEntity<?> loginUser(@RequestBody LoginDto loginDto) {
+        try {
+            // Authenticate the user
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginDto.getUsername(),
+                            loginDto.getPassword()));
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginDto.getUsername(),
-                        loginDto.getPassword()));
+            // Set the authentication in the security context
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            // Generate JWT token
+            String token = jwtGenerator.generateToken(authentication);
 
-        String token = jwtGenerator.generateToken(authentication);
-        return new ResponseEntity<>(new AuthResponseDTO(token), HttpStatus.OK);
+            // Find the user details
+            Optional<UserEntity> userOptional = userRepository.findByEmail(loginDto.getUsername());
+
+            if (userOptional.isPresent()) {
+                UserEntity user = userOptional.get();
+
+                // Return the response entity with token and user details
+                return new ResponseEntity<>(
+                        new AuthResponseDTO(token, user.getUserId(), user.getUsername(), user.getFirstName(),
+                                user.getLastName()),
+                        HttpStatus.OK);
+            } else {
+                // If user details are not found, return an error response
+                return new ResponseEntity<>("User not found!", HttpStatus.UNAUTHORIZED);
+            }
+        } catch (BadCredentialsException e) {
+            // Handle incorrect credentials
+            return new ResponseEntity<>("Email or password is incorrect!", HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            // Handle other exceptions
+            e.printStackTrace();
+            return new ResponseEntity<>("An error occurred during authentication.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

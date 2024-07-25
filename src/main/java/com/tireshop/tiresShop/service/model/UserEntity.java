@@ -14,12 +14,19 @@ import lombok.NoArgsConstructor;
 public class UserEntity {
 
     @Id
-    private Long id;
-
+    private Long userId;
     private String username;
     private String password;
     private String firstName;
     private String lastName;
+
+    public Long getUserId() {
+        return this.userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
 
     public String getFirstName() {
         return this.firstName;
