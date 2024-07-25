@@ -43,20 +43,61 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody RegisterDto registerDto) {
+    public ResponseEntity<?> registerUser(@RequestBody RegisterDto registerDto) {
 
+        // Check if the user already exists
         if (userRepository.existsByUsername(registerDto.getUsername()) == false) {
-            return new ResponseEntity<>("Email is already taken!", HttpStatus.BAD_REQUEST);
+            // If user exists, return a meaningful response
+            return new ResponseEntity<>("Username is already taken!", HttpStatus.BAD_REQUEST);
         }
 
+        // Create a new UserEntity object
         UserEntity user = new UserEntity();
-
         user.setUsername(registerDto.getUsername());
-        user.setfirstName(registerDto.getFirstName());
+        user.setFirstName(registerDto.getFirstName());
         user.setLastName(registerDto.getLastName());
-        user.setPassword(passwordEncoder.encode((registerDto.getPassword())));
+        user.setPassword(passwordEncoder.encode(registerDto.getPassword()));
 
-        return userRepository.registerUser(user);
+        // Register the user
+        userRepository.registerUser(user);
+
+        try {
+            // Authenticate the user
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            registerDto.getUsername(),
+                            registerDto.getPassword()));
+
+            // Set the authentication in the security context
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // Generate JWT token
+            String token = jwtGenerator.generateToken(authentication);
+
+            // Fetch the user details again to ensure they are in the database
+            Optional<UserEntity> userOptional = userRepository.findByEmail(registerDto.getUsername());
+
+            if (userOptional.isPresent()) {
+                UserEntity registeredUser = userOptional.get();
+
+                // Return the response entity with token and user details
+                return new ResponseEntity<>(
+                        new AuthResponseDTO(token, registeredUser.getUserId(), registeredUser.getUsername(),
+                                registeredUser.getFirstName(),
+                                registeredUser.getLastName()),
+                        HttpStatus.OK);
+            } else {
+                // If user details are not found, return an error response
+                return new ResponseEntity<>("User not found after registration!", HttpStatus.UNAUTHORIZED);
+            }
+        } catch (BadCredentialsException e) {
+            // Handle incorrect credentials
+            return new ResponseEntity<>("Invalid credentials!", HttpStatus.UNAUTHORIZED);
+        } catch (Exception e) {
+            // Handle other exceptions
+            e.printStackTrace();
+            return new ResponseEntity<>("An error occurred during authentication.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/login")

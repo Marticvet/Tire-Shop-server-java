@@ -89,7 +89,7 @@ public class UserRepository {
                 user.setUserId(rs.getLong("user_id"));
                 user.setUsername(rs.getString("email"));
                 user.setPassword(rs.getString("password"));
-                user.setfirstName(rs.getString("first_name"));
+                user.setFirstName(rs.getString("first_name"));
                 user.setLastName(rs.getString("last_name"));
                 return user;
             };

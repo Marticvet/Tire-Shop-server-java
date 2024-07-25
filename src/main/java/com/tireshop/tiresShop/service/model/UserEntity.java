@@ -36,7 +36,7 @@ public class UserEntity {
         return this.lastName;
     }
 
-    public void setfirstName(String firstName) {
+    public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
 
