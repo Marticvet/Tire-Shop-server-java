@@ -1,7 +1,7 @@
 package com.tireshop.tiresShop.service.security;
 
 import com.tireshop.tiresShop.service.model.UserEntity;
-import com.tireshop.tiresShop.service.repo.UserRepository;
+import com.tireshop.tiresShop.service.repo.UserRepo;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -16,10 +16,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final UserRepo userRepository;
 
     @Autowired
-    public CustomUserDetailsService(UserRepository userRepository) {
+    public CustomUserDetailsService(UserRepo userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -34,17 +34,4 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
     }
-
-    // @Override
-    // public UserDetails loadUserByUsername(String username) throws
-    // UsernameNotFoundException {
-    // Optional<UserEntity> userOptional = userRepository.findByEmail(username);
-    // UserEntity user = userOptional.orElseThrow(() -> new
-    // UsernameNotFoundException("Username not found"));
-
-    // return new
-    // org.springframework.security.core.userdetails.User(user.getUsername(),
-    // user.getPassword(),
-    // new ArrayList<>());
-    // }
 }

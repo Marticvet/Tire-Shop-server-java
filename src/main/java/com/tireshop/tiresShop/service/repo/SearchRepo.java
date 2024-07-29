@@ -65,8 +65,6 @@ public class SearchRepo {
         // Adding wildcards to the modelName and manufacturer parameters
         modelName = "%" + modelName + "%";
 
-        System.out.println(modelName + " ");
-
         RowMapper<Models> mapper = (rs, rowNum) -> {
 
             System.out.println(rowNum + " rowNum");

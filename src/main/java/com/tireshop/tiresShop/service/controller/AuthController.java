@@ -1,7 +1,10 @@
 package com.tireshop.tiresShop.service.controller;
 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -9,9 +12,12 @@ import com.tireshop.tiresShop.service.dto.AuthResponseDTO;
 import com.tireshop.tiresShop.service.dto.LoginDto;
 import com.tireshop.tiresShop.service.dto.RegisterDto;
 import com.tireshop.tiresShop.service.model.UserEntity;
-import com.tireshop.tiresShop.service.repo.UserRepository;
+import com.tireshop.tiresShop.service.model.UsersCartItems;
+import com.tireshop.tiresShop.service.repo.UserRepo;
 import com.tireshop.tiresShop.service.security.JWTGenerator;
+import com.tireshop.tiresShop.service.service.UserService;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +34,16 @@ import org.springframework.security.authentication.BadCredentialsException;
 @RequestMapping("/users")
 public class AuthController {
 
+    @Autowired
+    private UserService service;
+
     private AuthenticationManager authenticationManager;
-    private UserRepository userRepository;
+    private UserRepo userRepository;
     private PasswordEncoder passwordEncoder;
     private JWTGenerator jwtGenerator;
 
     @Autowired
-    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository,
+    public AuthController(AuthenticationManager authenticationManager, UserRepo userRepository,
             PasswordEncoder passwordEncoder, JWTGenerator jwtGenerator) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
@@ -137,6 +146,53 @@ public class AuthController {
             // Handle other exceptions
             e.printStackTrace();
             return new ResponseEntity<>("An error occurred during authentication.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/shoppingCart/{userId}")
+    public ResponseEntity<?> getUserCartItems(@PathVariable int userId, @RequestHeader("Authorization") String token) {
+        try {
+            // Remove the "Bearer " prefix from the token
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            // Validate the token
+            if (!jwtGenerator.validateToken(token)) {
+                return new ResponseEntity<>("Invalid token!", HttpStatus.UNAUTHORIZED);
+            }
+
+            // Extract username from the token
+            String username = jwtGenerator.getUsernameFromJWT(token);
+
+            // Get the user details
+            Optional<UserEntity> userOptional = userRepository.findByEmail(username);
+
+            System.out.println(userOptional.isPresent() + " userOptional.isPresent()");
+            if (userOptional.isPresent()) {
+                UserEntity user = userOptional.get();
+
+                // Check if the user ID matches
+                if (user.getUserId() == userId) {
+                    // Fetch the user's shopping cart items (this is just a placeholder)
+                    // You should implement the actual logic to get the shopping cart items
+                    List<UsersCartItems> usersCartItems = service.getUserCartItems(userId);
+
+                    // Return the shopping cart items
+                    return new ResponseEntity<>(usersCartItems, HttpStatus.OK);
+                } else {
+                    // If user ID doesn't match, return an unauthorized response
+                    return new ResponseEntity<>("User ID does not match!", HttpStatus.UNAUTHORIZED);
+                }
+            } else {
+                // If user details are not found, return an error response
+                return new ResponseEntity<>("User not found!", HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            // Handle other exceptions
+            e.printStackTrace();
+            return new ResponseEntity<>("An error occurred while processing the request.",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
