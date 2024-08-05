@@ -66,12 +66,9 @@ public class SearchRepo {
         modelName = "%" + modelName + "%";
 
         RowMapper<Models> mapper = (rs, rowNum) -> {
-
-            System.out.println(rowNum + " rowNum");
             Models model = new Models();
 
             model.setId(rs.getInt("id"));
-            model.setModelId(rs.getInt("tire_model_id"));
             model.setTireLoudnessLevel(rs.getString("tire_loudness_level"));
             model.setTirePrice(rs.getDouble("tire_price"));
             model.setTireQuantity(rs.getInt("tire_quantity"));
@@ -93,7 +90,6 @@ public class SearchRepo {
             return model;
         };
 
-        System.out.println(mapper);
         return jdbc.query(sql, mapper, modelName);
     }
 

@@ -5,15 +5,15 @@ import lombok.Data;
 @Data
 public class AuthResponseDTO {
     private Long userId;
-    private String accessToken;
+    private String token;
     private String tokenType = "Bearer ";
     private String username;
     private String firstName;
     private String lastName;
 
-    public AuthResponseDTO(String accessToken, Long userId, String username, String firstName,
+    public AuthResponseDTO(String token, Long userId, String username, String firstName,
             String lastName) {
-        this.accessToken = accessToken;
+        this.token = token;
         this.userId = userId;
         this.username = username;
         this.firstName = firstName;

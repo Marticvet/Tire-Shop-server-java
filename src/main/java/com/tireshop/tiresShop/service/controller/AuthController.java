@@ -1,8 +1,11 @@
 package com.tireshop.tiresShop.service.controller;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,11 +14,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.tireshop.tiresShop.service.dto.AuthResponseDTO;
 import com.tireshop.tiresShop.service.dto.LoginDto;
 import com.tireshop.tiresShop.service.dto.RegisterDto;
+import com.tireshop.tiresShop.service.dto.UpdateDto;
 import com.tireshop.tiresShop.service.model.UserEntity;
 import com.tireshop.tiresShop.service.model.UsersCartItems;
 import com.tireshop.tiresShop.service.repo.UserRepo;
 import com.tireshop.tiresShop.service.security.JWTGenerator;
 import com.tireshop.tiresShop.service.service.UserService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,11 +34,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 
 @RestController
 @RequestMapping("/users")
+@CrossOrigin
 public class AuthController {
 
     @Autowired
@@ -149,6 +158,53 @@ public class AuthController {
         }
     }
 
+    @PutMapping("/update/{userId}")
+    public ResponseEntity<?> updateUser(@PathVariable int userId, @RequestBody UpdateDto updateDto,
+            @RequestHeader("Authorization") String token) {
+
+        System.out.println(updateDto);
+        try {
+            // Remove the "Bearer " prefix from the token
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            // Validate the token
+            if (!jwtGenerator.validateToken(token)) {
+                return new ResponseEntity<>("Invalid token!", HttpStatus.UNAUTHORIZED);
+            }
+
+            // Extract username from the token
+            String username = jwtGenerator.getUsernameFromJWT(token);
+
+            // Get the user details
+            Optional<UserEntity> userOptional = userRepository.findByEmail(username);
+
+            if (userOptional.isPresent()) {
+                UserEntity user = userOptional.get();
+
+                // Check if the user ID matches
+                if (user.getUserId() == userId) {
+                    // You should implement the actual logic to update user's information
+                    service.updateUser(updateDto);
+
+                    return new ResponseEntity<>("Ebanie", HttpStatus.OK);
+                } else {
+                    // If user ID doesn't match, return an unauthorized response
+                    return new ResponseEntity<>("User ID does not match!", HttpStatus.UNAUTHORIZED);
+                }
+            } else {
+                // If user details are not found, return an error response
+                return new ResponseEntity<>("User not found!", HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            // Handle other exceptions
+            e.printStackTrace();
+            return new ResponseEntity<>("An error occurred while processing the request.",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/shoppingCart/{userId}")
     public ResponseEntity<?> getUserCartItems(@PathVariable int userId, @RequestHeader("Authorization") String token) {
         try {
@@ -168,7 +224,6 @@ public class AuthController {
             // Get the user details
             Optional<UserEntity> userOptional = userRepository.findByEmail(username);
 
-            System.out.println(userOptional.isPresent() + " userOptional.isPresent()");
             if (userOptional.isPresent()) {
                 UserEntity user = userOptional.get();
 
@@ -193,6 +248,63 @@ public class AuthController {
             e.printStackTrace();
             return new ResponseEntity<>("An error occurred while processing the request.",
                     HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @DeleteMapping("/logout")
+    public String logout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+        return "Logged out!";
+    }
+
+    @PostMapping("/shoppingCart/{userId}")
+    public ResponseEntity<?> addItemInShoppingCart(@PathVariable int userId,
+            @RequestHeader("Authorization") String token, @RequestBody UsersCartItems usersCartItems) {
+        try {
+            // Remove the "Bearer " prefix from the token
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            // Validate the token
+            if (!jwtGenerator.validateToken(token)) {
+                return new ResponseEntity<>("Invalid token!", HttpStatus.UNAUTHORIZED);
+            }
+
+            // Extract username from the token
+            String username = jwtGenerator.getUsernameFromJWT(token);
+
+            // Get the user details
+            Optional<UserEntity> userOptional = userRepository.findByEmail(username);
+
+            if (userOptional.isPresent()) {
+                UserEntity user = userOptional.get();
+
+                // Check if the user ID matches
+                if (user.getUserId() == userId) {
+                    // Fetch the user's shopping cart items (this is just a placeholder)
+                    // You should implement the actual logic to get the shopping cart items
+                    ResponseEntity<String> usersCartItem = service.addItemInShoppingCart(usersCartItems.getUserId(),
+                            usersCartItems.getQuantity(), usersCartItems.getTireId());
+
+                    // Return the shopping cart items
+                    return new ResponseEntity<>(usersCartItem, HttpStatus.OK);
+                } else {
+                    // If user ID doesn't match, return an unauthorized response
+                    return new ResponseEntity<>("User ID does not match!", HttpStatus.UNAUTHORIZED);
+                }
+            } else {
+                // If user details are not found, return an error response
+                return new ResponseEntity<>("User not found!", HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            // Handle other exceptions
+            e.printStackTrace();
+            return new ResponseEntity<>("Invalid user's token!",
+                    HttpStatus.FORBIDDEN);
         }
     }
 }

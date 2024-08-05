@@ -117,7 +117,6 @@ public class SizesRepo {
             Models model = new Models();
 
             model.setId(rs.getInt("id"));
-            model.setModelId(rs.getInt("tire_model_id"));
             model.setTireLoudnessLevel(rs.getString("tire_loudness_level"));
             model.setTirePrice(rs.getDouble("tire_price"));
             model.setTireQuantity(rs.getInt("tire_quantity"));

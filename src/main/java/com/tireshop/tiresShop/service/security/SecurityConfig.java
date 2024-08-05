@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -40,7 +42,19 @@ public class SecurityConfig {
                                 .sessionManagement((session) -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-                http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                                .logout(logout -> logout
+                                                .logoutUrl("/logout") // Define a logout URL (if needed)
+                                                .logoutSuccessHandler((request, response, authentication) -> {
+                                                        // Custom logic after logout, e.g., logging, clearing cookies,
+                                                        // etc.
+                                                        response.setStatus(HttpServletResponse.SC_OK);
+                                                })
+                                                .invalidateHttpSession(true) // Invalidate session if using stateful
+                                                                             // session management
+                                                .deleteCookies("JSESSIONID") // Delete session cookie (if applicable)
+                                );
+                ;
 
                 return http.build();
         }

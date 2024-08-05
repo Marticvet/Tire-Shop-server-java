@@ -11,8 +11,6 @@ import lombok.NoArgsConstructor;
 @Component
 public class Models {
     private int id;
-    private int modelId; // Changed from model_id to follow camelCase convention
-    private int tireTodelId; // Changed from model_id to follow camelCase convention
     private String tireLoudnessLevel; // Changed from tire_loudness_level
     private double tirePrice; // Changed from tire_price
     private int tireQuantity; // Changed from tire_quantity

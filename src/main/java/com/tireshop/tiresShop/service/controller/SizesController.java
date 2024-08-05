@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,17 +16,18 @@ import com.tireshop.tiresShop.service.service.SizesService;
 
 @RestController
 @CrossOrigin
+@RequestMapping("/sizes")
 public class SizesController {
 
     @Autowired
     private SizesService service;
 
-    @GetMapping("/sizes/model-sizes/{modelId}")
+    @GetMapping("/model-sizes/{modelId}")
     public List<Sizes> getSizesByModelId(@PathVariable String modelId) {
         return service.getSizesByModelId(modelId);
     }
 
-    @GetMapping("/sizes")
+    @GetMapping("")
     public List<Models> getModelsWithSizes(
             @RequestParam("width") String width,
             @RequestParam("height") String height,
