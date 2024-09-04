@@ -18,22 +18,22 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class UserRepo {
 
-    private JdbcTemplate jdbc;
+    private JdbcTemplate jdbcTemplate;
 
     public JdbcTemplate getJdbc() {
-        return jdbc;
+        return jdbcTemplate;
     }
 
     @Autowired
-    public void setJdbc(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    public void setJdbc(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public Boolean existsByUsername(String username) {
 
         String sql = "SELECT * from user where email = ?";
 
-        return jdbc.queryForList(sql, username).size() == 0 ? true : false;
+        return jdbcTemplate.queryForList(sql, username).size() == 0 ? true : false;
     }
 
     public ResponseEntity<String> registerUser(UserEntity user) {
@@ -48,7 +48,7 @@ public class UserRepo {
                 """;
 
         try {
-            int rowsAffected = jdbc.update(sql, firstName, lastName, email, password);
+            int rowsAffected = jdbcTemplate.update(sql, firstName, lastName, email, password);
             if (rowsAffected > 0) {
                 return new ResponseEntity<>("User registered successfully!", HttpStatus.OK);
             } else {
@@ -71,7 +71,7 @@ public class UserRepo {
                 """;
 
         try {
-            int rowsAffected = jdbc.update(sql, firstName, lastName, email, password);
+            int rowsAffected = jdbcTemplate.update(sql, firstName, lastName, email, password);
             if (rowsAffected > 0) {
                 return new ResponseEntity<>("User Logged in successfully!", HttpStatus.OK);
             } else {
@@ -96,7 +96,7 @@ public class UserRepo {
                 return user;
             };
 
-            List<UserEntity> users = jdbc.query(sql, mapper, email);
+            List<UserEntity> users = jdbcTemplate.query(sql, mapper, email);
             if (users.isEmpty()) {
                 return Optional.empty();
             } else {
@@ -191,13 +191,13 @@ public class UserRepo {
             return item;
         };
 
-        return jdbc.query(sql, mapper, userId);
+        return jdbcTemplate.query(sql, mapper, userId);
     }
 
     public ResponseEntity<String> addItemInShoppingCart(int userId, int quantity, int tireId) {
         String sql = "INSERT INTO user_basket (user_id, quantity, tire_id) VALUES (?, ?, ?)";
 
-        int rowsAffected = jdbc.update(sql, userId, quantity, tireId);
+        int rowsAffected = jdbcTemplate.update(sql, userId, quantity, tireId);
 
         try {
             if (rowsAffected > 0) {
@@ -294,7 +294,7 @@ public class UserRepo {
             return item;
         };
 
-        return jdbc.query(sql, mapper, id);
+        return jdbcTemplate.query(sql, mapper, id);
     }
 
     public ResponseEntity<String> updateUser(UpdateDto user) {
@@ -309,7 +309,7 @@ public class UserRepo {
                 """;
 
         try {
-            int rowsAffected = jdbc.update(sql, firstName, lastName, email, password);
+            int rowsAffected = jdbcTemplate.update(sql, firstName, lastName, email, password);
             if (rowsAffected > 0) {
                 return new ResponseEntity<>("User Logged in successfully!", HttpStatus.OK);
             } else {
@@ -320,4 +320,24 @@ public class UserRepo {
         }
     }
 
+    public ResponseEntity<String> deleteItemInShoppingCart(Long userId, int tireId) {
+        // Check if user exists
+        String checkUserSql = "SELECT * FROM user WHERE user_id = ?";
+        boolean userCount = jdbcTemplate.queryForList(checkUserSql, userId).size() > 0;
+
+        if (userCount == false) {
+            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+        }
+
+        // Delete item from shopping cart
+        String deleteSql = "DELETE FROM user_basket WHERE id = ?";
+        int rowsAffected = jdbcTemplate.update(deleteSql, tireId);
+
+        if (rowsAffected > 0) {
+            return new ResponseEntity<>("Item deleted successfully", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Item not found in shopping cart",
+                    HttpStatus.NOT_FOUND);
+        }
+    }
 }

@@ -307,4 +307,44 @@ public class AuthController {
                     HttpStatus.FORBIDDEN);
         }
     }
+
+    @DeleteMapping("/shoppingCart/{tireId}")
+    public ResponseEntity<?> deleteItemInShoppingCart(@PathVariable int tireId,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // Remove the "Bearer " prefix from the token
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+
+            // Validate the token
+            if (!jwtGenerator.validateToken(token)) {
+                return new ResponseEntity<>("Invalid token!", HttpStatus.UNAUTHORIZED);
+            }
+
+            // Extract username from the token
+            String username = jwtGenerator.getUsernameFromJWT(token);
+
+            // Get the user details
+            Optional<UserEntity> userOptional = userRepository.findByEmail(username);
+
+            if (userOptional.isPresent()) {
+                UserEntity user = userOptional.get();
+
+                // Delete the item from the shopping cart
+                ResponseEntity<String> response = service.deleteItemInShoppingCart(user.getUserId(),
+                        tireId);
+
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } else {
+                // If user details are not found, return an error response
+                return new ResponseEntity<>("User not found!", HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            // Handle other exceptions
+            e.printStackTrace();
+            return new ResponseEntity<>("An error occurred while processing the request.",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

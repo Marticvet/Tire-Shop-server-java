@@ -28,4 +28,7 @@ public class UserService {
         return repo.updateUser(updateDto);
     }
 
+    public ResponseEntity<String> deleteItemInShoppingCart(Long userId, int tireId) {
+        return repo.deleteItemInShoppingCart(userId, tireId);
+    }
 }
