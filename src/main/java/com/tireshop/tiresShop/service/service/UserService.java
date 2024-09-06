@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.tireshop.tiresShop.service.dto.UpdateDto;
+import com.tireshop.tiresShop.service.dto.UpdateResponse;
 import com.tireshop.tiresShop.service.model.UsersCartItems;
 import com.tireshop.tiresShop.service.repo.UserRepo;
 
@@ -28,7 +29,11 @@ public class UserService {
         return repo.updateUser(updateDto);
     }
 
-    public ResponseEntity<String> deleteItemInShoppingCart(Long userId, int tireId) {
-        return repo.deleteItemInShoppingCart(userId, tireId);
+    public ResponseEntity<String> deleteItemInShoppingCart(Long userId, int itemId) {
+        return repo.deleteItemInShoppingCart(userId, itemId);
+    }
+
+    public ResponseEntity<UpdateResponse> updateItemInShoppingCart(Long userId, int itemId, int quantity) {
+        return repo.updateItemInShoppingCart(userId, itemId, quantity);
     }
 }
