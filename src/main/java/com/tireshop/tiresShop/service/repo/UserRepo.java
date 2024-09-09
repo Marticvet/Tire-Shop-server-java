@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import com.tireshop.tiresShop.service.dto.UpdateDto;
 import com.tireshop.tiresShop.service.dto.UpdateResponse;
 import com.tireshop.tiresShop.service.model.UserEntity;
 import com.tireshop.tiresShop.service.model.UsersCartItems;
@@ -298,21 +297,25 @@ public class UserRepo {
         return jdbcTemplate.query(sql, mapper, id);
     }
 
-    public ResponseEntity<String> updateUser(UpdateDto user) {
+    public ResponseEntity<String> updateUser(UserEntity user) {
+        String username = user.getUsername(); // New email
         String firstName = user.getFirstName();
         String lastName = user.getLastName();
-        String email = user.getUsername();
-        String password = user.getPassword();
+        String password = user.getPassword(); // Encoded password
 
         String sql = """
-                INSERT INTO user (first_name, last_name, email, password)
-                VALUES (?, ?, ?, ?)
+                UPDATE user
+                SET email = ?, first_name = ?, last_name = ?, password = ?
+                WHERE email = ?
                 """;
 
         try {
-            int rowsAffected = jdbcTemplate.update(sql, firstName, lastName, email, password);
+            // Perform the update in the database
+            int rowsAffected = jdbcTemplate.update(sql, username, firstName, lastName, password, username);
+
+            // Check if the update was successful
             if (rowsAffected > 0) {
-                return new ResponseEntity<>("User Logged in successfully!", HttpStatus.OK);
+                return new ResponseEntity<>("User's profile has been successfully updated!", HttpStatus.OK);
             } else {
                 return new ResponseEntity<>("Something went wrong!", HttpStatus.BAD_REQUEST);
             }

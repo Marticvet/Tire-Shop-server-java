@@ -29,6 +29,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -154,15 +155,14 @@ public class AuthController {
         } catch (Exception e) {
             // Handle other exceptions
             e.printStackTrace();
-            return new ResponseEntity<>("An error occurred during authentication.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Invalid user's token!",
+                    HttpStatus.FORBIDDEN);
         }
     }
 
     @PutMapping("/update/{userId}")
     public ResponseEntity<?> updateUser(@PathVariable int userId, @RequestBody UpdateDto updateDto,
             @RequestHeader("Authorization") String token) {
-
-        System.out.println(updateDto);
         try {
             // Remove the "Bearer " prefix from the token
             if (token.startsWith("Bearer ")) {
@@ -174,21 +174,45 @@ public class AuthController {
                 return new ResponseEntity<>("Invalid token!", HttpStatus.UNAUTHORIZED);
             }
 
-            // Extract username from the token
-            String username = jwtGenerator.getUsernameFromJWT(token);
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            updateDto.getUsername(),
+                            updateDto.getPassword()));
+
+            // Set the authentication in the security context
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // Generate JWT token
+            String newToken = jwtGenerator.generateToken(authentication);
+
+            // Create a new UserEntity object
+            UserEntity oldUser = new UserEntity();
+            oldUser.setUsername(updateDto.getUsername());
+            oldUser.setFirstName(updateDto.getFirstName());
+            oldUser.setLastName(updateDto.getLastName());
+            oldUser.setPassword(passwordEncoder.encode(updateDto.getPassword()));
 
             // Get the user details
-            Optional<UserEntity> userOptional = userRepository.findByEmail(username);
+            Optional<UserEntity> userOptional = userRepository.findByEmail(oldUser.getUsername());
 
             if (userOptional.isPresent()) {
                 UserEntity user = userOptional.get();
 
-                // Check if the user ID matches
-                if (user.getUserId() == userId) {
-                    // You should implement the actual logic to update user's information
-                    service.updateUser(updateDto);
+                // Call the service to update the user
+                ResponseEntity<String> updateResponse = service.updateUser(oldUser);
 
-                    return new ResponseEntity<>("Ebanie", HttpStatus.OK);
+                // Get status code from the update response
+                HttpStatusCode statusCode = updateResponse.getStatusCode();
+
+                // Check if the user ID matches and if the update was successful (200 OK)
+                if (user.getUserId() == userId && statusCode.is2xxSuccessful()) {
+
+                    // Return the token and updated user information
+                    return new ResponseEntity<>(
+                            new AuthResponseDTO(newToken, user.getUserId(), oldUser.getUsername(),
+                                    oldUser.getFirstName(),
+                                    oldUser.getLastName()),
+                            HttpStatus.OK);
                 } else {
                     // If user ID doesn't match, return an unauthorized response
                     return new ResponseEntity<>("User ID does not match!", HttpStatus.UNAUTHORIZED);
@@ -200,8 +224,7 @@ public class AuthController {
         } catch (Exception e) {
             // Handle other exceptions
             e.printStackTrace();
-            return new ResponseEntity<>("An error occurred while processing the request.",
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Invalid user's token!", HttpStatus.FORBIDDEN);
         }
     }
 
@@ -246,8 +269,8 @@ public class AuthController {
         } catch (Exception e) {
             // Handle other exceptions
             e.printStackTrace();
-            return new ResponseEntity<>("An error occurred while processing the request.",
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Invalid user's token!",
+                    HttpStatus.FORBIDDEN);
         }
     }
 
@@ -343,8 +366,8 @@ public class AuthController {
         } catch (Exception e) {
             // Handle other exceptions
             e.printStackTrace();
-            return new ResponseEntity<>("An error occurred while processing the request.",
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Invalid user's token!",
+                    HttpStatus.FORBIDDEN);
         }
     }
 
@@ -381,8 +404,8 @@ public class AuthController {
         } catch (Exception e) {
             // Handle other exceptions
             e.printStackTrace();
-            return new ResponseEntity<>("An error occurred while processing the request.",
-                    HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>("Invalid user's token!",
+                    HttpStatus.FORBIDDEN);
         }
     }
 }

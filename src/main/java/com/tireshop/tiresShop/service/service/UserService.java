@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.tireshop.tiresShop.service.dto.UpdateDto;
 import com.tireshop.tiresShop.service.dto.UpdateResponse;
+import com.tireshop.tiresShop.service.model.UserEntity;
 import com.tireshop.tiresShop.service.model.UsersCartItems;
 import com.tireshop.tiresShop.service.repo.UserRepo;
 
@@ -25,8 +25,8 @@ public class UserService {
                 quantity, tireId);
     }
 
-    public ResponseEntity<String> updateUser(UpdateDto updateDto) {
-        return repo.updateUser(updateDto);
+    public ResponseEntity<String> updateUser(UserEntity user) {
+        return repo.updateUser(user);
     }
 
     public ResponseEntity<String> deleteItemInShoppingCart(Long userId, int itemId) {
