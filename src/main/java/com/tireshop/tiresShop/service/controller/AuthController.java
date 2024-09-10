@@ -190,7 +190,7 @@ public class AuthController {
             oldUser.setUsername(updateDto.getUsername());
             oldUser.setFirstName(updateDto.getFirstName());
             oldUser.setLastName(updateDto.getLastName());
-            oldUser.setPassword(passwordEncoder.encode(updateDto.getPassword()));
+            oldUser.setPassword(passwordEncoder.encode(updateDto.getNewPassword()));
 
             // Get the user details
             Optional<UserEntity> userOptional = userRepository.findByEmail(oldUser.getUsername());
