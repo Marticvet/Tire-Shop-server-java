@@ -63,10 +63,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterDto registerDto) {
-
-        // Check if the user already exists
-        if (userRepository.existsByUsername(registerDto.getUsername()) == false) {
-            // If user exists, return a meaningful response
+        if (userRepository.existsByUsername(registerDto.getUsername())) {
             return new ResponseEntity<>("Username is already taken!", HttpStatus.BAD_REQUEST);
         }
 
@@ -90,30 +87,17 @@ public class AuthController {
             // Set the authentication in the security context
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Generate JWT token
-            String token = jwtGenerator.generateToken(authentication);
+            // Generate JWT token with additional user information
+            String token = jwtGenerator.generateToken(authentication, user);
 
-            // Fetch the user details again to ensure they are in the database
-            Optional<UserEntity> userOptional = userRepository.findByEmail(registerDto.getUsername());
-
-            if (userOptional.isPresent()) {
-                UserEntity registeredUser = userOptional.get();
-
-                // Return the response entity with token and user details
-                return new ResponseEntity<>(
-                        new AuthResponseDTO(token, registeredUser.getUserId(), registeredUser.getUsername(),
-                                registeredUser.getFirstName(),
-                                registeredUser.getLastName()),
-                        HttpStatus.OK);
-            } else {
-                // If user details are not found, return an error response
-                return new ResponseEntity<>("User not found after registration!", HttpStatus.UNAUTHORIZED);
-            }
+            // Return the response entity with token and user details
+            return new ResponseEntity<>(
+                    new AuthResponseDTO(token, user.getUserId(), user.getUsername(), user.getFirstName(),
+                            user.getLastName()),
+                    HttpStatus.OK);
         } catch (BadCredentialsException e) {
-            // Handle incorrect credentials
             return new ResponseEntity<>("Invalid credentials!", HttpStatus.UNAUTHORIZED);
         } catch (Exception e) {
-            // Handle other exceptions
             e.printStackTrace();
             return new ResponseEntity<>("An error occurred during authentication.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -131,16 +115,16 @@ public class AuthController {
             // Set the authentication in the security context
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Generate JWT token
-            String token = jwtGenerator.generateToken(authentication);
-
-            // Find the user details
+            // Find the user details from the database using the email/username
             Optional<UserEntity> userOptional = userRepository.findByEmail(loginDto.getUsername());
 
             if (userOptional.isPresent()) {
-                UserEntity user = userOptional.get();
+                UserEntity user = userOptional.get(); // Get user details
 
-                // Return the response entity with token and user details
+                // Generate JWT token, passing both authentication and the user entity
+                String token = jwtGenerator.generateToken(authentication, user);
+
+                // Return the response entity with the token and user details
                 return new ResponseEntity<>(
                         new AuthResponseDTO(token, user.getUserId(), user.getUsername(), user.getFirstName(),
                                 user.getLastName()),
@@ -155,8 +139,7 @@ public class AuthController {
         } catch (Exception e) {
             // Handle other exceptions
             e.printStackTrace();
-            return new ResponseEntity<>("Invalid user's token!",
-                    HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>("Invalid user's token!", HttpStatus.FORBIDDEN);
         }
     }
 
@@ -182,9 +165,6 @@ public class AuthController {
             // Set the authentication in the security context
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Generate JWT token
-            String newToken = jwtGenerator.generateToken(authentication);
-
             // Create a new UserEntity object
             UserEntity oldUser = new UserEntity();
             oldUser.setUsername(updateDto.getUsername());
@@ -197,6 +177,9 @@ public class AuthController {
 
             if (userOptional.isPresent()) {
                 UserEntity user = userOptional.get();
+
+                // Generate JWT token
+                String newToken = jwtGenerator.generateToken(authentication, user);
 
                 // Call the service to update the user
                 ResponseEntity<String> updateResponse = service.updateUser(oldUser);
